@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    
+    <title>e-kimzua</title>
+    <style>* { padding: 0; margin: 0; } canvas { background: #eee; display: block; margin: 0 auto; }</style>
+    
+</head>
+<body>
+  <div id="text">
+    <h1>e-kimzua</h1>
+    <br/>
+    <p class="en-text">Respect our ancestors, respect our environment</p>
+    <p class="ch-text">孝敬祖先，爱护环境</p>
+    <br/>
+  </div>
+  <div id="images">
+    <div id="container">
+      <img src="burner.png" id="burner" origin="https://heartlandertourist.files.wordpress.com/2013/08/img_8885.jpg">
+      <div class="overlay droppable" ></div>
+    </div>
+  <br/>
+  <img src="paper.png" id="paper" onload="get_paper_origin()" origin="https://www.flickr.com/photos/102748040@N03/13141709955/"> 
+  </div>
+  <script>
+    // This script uses variable names corresponding to ids that are automatically provided by the browser.
+    // The feature is not generally recommended, but is convenient.
+    
+    function get_paper_origin() {
+       paper.origin_x = paper.x;
+       paper.origin_y = paper.y;
+       paper.onload = null;
+    }
+     
+    function reset_paper() {
+        document.getElementById("images").append(paper);
+	  	paper.style.position = 'static';
+	  	paper.style.top = paper.origin_y;
+	  	paper.style.left = paper.origin_x;
+        paper.src = "paper.png"
+    }
+
+    let currentDroppable = null;
+
+    
+    function touchDown(event) {
+      event.pageX = event.touches[0].pageX;
+      event.pageY = event.touches[0].pageY;
+      event.clientX = event.touches[0].clientX;
+      event.clientY = event.touches[0].clientY;
+      mouseDown(event);
+    }
+    
+    function mouseDown(event) {
+      let shiftX = event.clientX - paper.getBoundingClientRect().left;
+      let shiftY = event.clientY - paper.getBoundingClientRect().top;
+        
+      // (1) prepare to move: make absolute and on top by z-index
+      paper.style.position = 'absolute';
+      paper.style.zIndex = 1000;
+      
+      // move it out of any current parents directly into body
+      // to make it positioned relative to the body
+      document.body.append(paper);
+      
+      // centers the paper at (pageX, pageY) coordinates
+      function moveAt(pageX, pageY) {
+        paper.style.left = pageX - shiftX + 'px';
+        paper.style.top = pageY - shiftY + 'px';
+      }
+      
+      // move our absolutely-positioned paper under the pointer
+      moveAt(event.pageX, event.pageY);
+      
+      function onTouchMove(event) {
+          event.pageX = event.touches[0].pageX;
+          event.pageY = event.touches[0].pageY;
+          event.clientX = event.touches[0].clientX;
+          event.clientY = event.touches[0].clientY;
+          onMouseMove(event);
+      }
+      
+      function onMouseMove(event) {
+        moveAt(event.pageX, event.pageY);
+
+        paper.hidden = true;
+        let elemBelow = document.elementFromPoint(event.clientX, event.clientY);
+        paper.hidden = false;
+
+        if (!elemBelow) return;
+
+        let droppableBelow = elemBelow.closest('.droppable');
+        if (currentDroppable != droppableBelow) {
+          if (currentDroppable) { // null when we were not over a droppable before this event
+            leaveDroppable(currentDroppable, paper);
+          }
+          currentDroppable = droppableBelow;
+          if (currentDroppable) { // null if we're not coming over a droppable now
+            // (maybe just left the droppable)
+            enterDroppable(currentDroppable, paper);
+          }
+        }
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('touchmove', onTouchMove);
+      
+      function touchEnd(event) {
+          event.pageX = event.changedTouches[0].pageX;
+          event.pageY = event.changedTouches[0].pageY;
+          event.clientX = event.changedTouches[0].clientX;
+          event.clientY = event.changedTouches[0].clientY;
+          moveEnd(event);
+      }
+      
+      function moveEnd(event) {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('touchmove', onTouchMove);
+        
+        paper.hidden = true;
+        let elemBelow = document.elementFromPoint(event.clientX, event.clientY);
+        paper.hidden = false;
+        if (elemBelow && elemBelow.closest('.droppable')){
+          // stop moving paper and show burning animation for 8 seconds
+          setTimeout(reset_paper, 7200);
+        }
+        else {
+          reset_paper();
+          paper.onmouseup = null;
+        }
+        
+      };
+      
+      paper.onmouseup = moveEnd;
+      paper.ontouchend = touchEnd;
+
+    };
+
+    paper.onmousedown = mouseDown;
+    paper.ontouchstart = touchDown;
+    
+    function enterDroppable(target, source) {
+      burner.src = "burner-fire.png";
+      source.src = "paper-burning.gif";
+    }
+
+    function leaveDroppable(target, source) {
+      source.src = "paper.png";
+    }
+
+    paper.ondragstart = function() {
+      return false;
+    };
+  </script>
+  
+  
+<style>
+    
+html, body {
+  overflow: hidden;
+  height: 100%;
+}
+
+h1 {
+  font-size: 5vh;
+}
+
+.en-text {
+  font-size: 1.8vh;
+}
+
+.ch-text {
+  font-size: 2.5vh;
+}
+
+#text {
+  margin: 0 auto;
+  text-align: center;
+}
+
+#images {
+  text-align: center;
+}
+
+#burner {
+  height: 100%;
+  width: auto;
+}
+
+#paper {
+  cursor: pointer;
+  margin: auto;
+  /*
+  width: 192px;
+  height: 150px;
+  */
+  height: 15vh;
+  width: auto;
+  
+}
+
+#container{
+  cursor: pointer;
+  margin: auto;
+  text-align: center;
+  /*
+  width: 386px;
+  height: 518px;
+  */
+  height: 55vh;
+  width: 41vh;
+  
+}
+
+.overlay {
+  position: relative;
+  width: 70%;
+  height: 20%;
+  margin: auto;
+  transform:translate(0%, -380%);
+}
+
+</style>
+
+
+</body>
